@@ -182,7 +182,9 @@ func (a *ArchiveBuilder) entriesForPath(ctx context.Context, source, dest string
 
 		header, err := tar.FileInfoHeader(info, linkname)
 		if err != nil {
-			return errors.Wrapf(err, "%s: making header", path)
+			// Not all types of files are allowed in a tarball. That's OK.
+			// Mimic the Docker behavior and just skip the file.
+			return nil
 		}
 
 		clearUIDAndGID(header)
