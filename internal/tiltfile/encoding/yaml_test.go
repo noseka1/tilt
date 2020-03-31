@@ -8,6 +8,7 @@ import (
 
 	"github.com/windmilleng/tilt/internal/testutils"
 	"github.com/windmilleng/tilt/internal/tiltfile/io"
+	"github.com/windmilleng/tilt/internal/testutils"
 )
 
 func TestReadYAML(t *testing.T) {
