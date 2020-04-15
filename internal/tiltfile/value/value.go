@@ -118,7 +118,7 @@ func StringSliceToList(slice []string) *starlark.List {
 // provides dockerfile-style behavior of:
 // a string gets interpreted as a shell command (like, sh -c 'foo bar $X')
 // an array of strings gets interpreted as a raw argv to exec
-func ValueToCmd(v starlark.Value) (model.Cmd, error) {
+func ValueToHostCmd(v starlark.Value) (model.Cmd, error) {
 	switch x := v.(type) {
 	// If a starlark function takes an optional command argument, then UnpackArgs will set its starlark.Value to nil
 	// we convert nils here to an empty Cmd, since otherwise every callsite would have to do a nil check with presumably
@@ -126,7 +126,26 @@ func ValueToCmd(v starlark.Value) (model.Cmd, error) {
 	case nil:
 		return model.Cmd{}, nil
 	case starlark.String:
-		return model.ToShellCmd(string(x)), nil
+		return model.ToHostShellCmd(string(x)), nil
+	case starlark.Sequence:
+		argv, err := SequenceToStringSlice(x)
+		if err != nil {
+			return model.Cmd{}, errors.Wrap(err, "a command must be a string or a list of strings")
+		}
+		return model.Cmd{Argv: argv}, nil
+	default:
+		return model.Cmd{}, fmt.Errorf("a command must be a string or list of strings. found %T", x)
+	}
+}
+func ValueToUnixCmd(v starlark.Value) (model.Cmd, error) {
+	switch x := v.(type) {
+	// If a starlark function takes an optional command argument, then UnpackArgs will set its starlark.Value to nil
+	// we convert nils here to an empty Cmd, since otherwise every callsite would have to do a nil check with presumably
+	// the same outcome
+	case nil:
+		return model.Cmd{}, nil
+	case starlark.String:
+		return model.ToUnixShellCmd(string(x)), nil
 	case starlark.Sequence:
 		argv, err := SequenceToStringSlice(x)
 		if err != nil {

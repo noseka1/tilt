@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/labels"
@@ -353,17 +354,29 @@ func (c Cmd) Empty() bool {
 	return len(c.Argv) == 0
 }
 
-func ToShellCmd(cmd string) Cmd {
+// Create a shell command for running on the Host OS
+func ToHostShellCmd(cmd string) Cmd {
+  if cmd == "" {
+	  return Cmd{}
+  }
+  if runtime.GOOS == "windows" {
+	// from https://docs.docker.com/engine/reference/builder/#run
+	return Cmd{Argv: []string{"cmd", "/S", "/C", cmd}}
+  }
+  return ToUnixShellCmd(cmd)
+}
+
+func ToUnixShellCmd(cmd string) Cmd {
 	if cmd == "" {
 		return Cmd{}
 	}
 	return Cmd{Argv: []string{"sh", "-c", cmd}}
 }
 
-func ToShellCmds(cmds []string) []Cmd {
+func ToUnixShellCmds(cmds []string) []Cmd {
 	res := make([]Cmd, len(cmds))
 	for i, cmd := range cmds {
-		res[i] = ToShellCmd(cmd)
+		res[i] = ToUnixShellCmd(cmd)
 	}
 	return res
 }
